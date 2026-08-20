@@ -57,7 +57,11 @@ impl Command {
             debug!("Will keep root privileges!");
         }
 
-        sandbox::apply_landlock()?;
+        if self.opts.unconfine_landlock {
+            warn!("Landlock confinement is disabled; internal files are not protected!");
+        } else {
+            sandbox::apply_landlock()?;
+        }
         files::setup_home()?;
 
         let mut cmd = Command::new(&env::shell()?);

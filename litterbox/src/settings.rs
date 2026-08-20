@@ -69,6 +69,8 @@ pub struct LitterboxSettings {
     pub expose_kfd: bool,
     #[serde(default = "default_false")]
     pub unconfine_seccomp: bool,
+    #[serde(default = "default_false")]
+    pub unconfine_landlock: bool,
     #[serde(default)]
     pub shm_size_gb: Option<u32>,
     #[serde(default = "default_pasta")]
@@ -110,7 +112,7 @@ impl LitterboxSettings {
         Ok(settings)
     }
 
-    fn load(lbx_name: &str) -> Result<Option<Self>> {
+    pub fn load(lbx_name: &str) -> Result<Option<Self>> {
         let path = settings_path(lbx_name)?;
         if !path.exists() {
             debug!("Settings file does not exist for {}", lbx_name);
@@ -162,6 +164,15 @@ impl LitterboxSettings {
             .with_default(existing.map(|s| s.unconfine_seccomp).unwrap_or(false))
             .with_help_message(
                 "This enables 'dangerous' syscalls required by things like the Mojo debugger.",
+            )
+            .prompt()?;
+
+        let unconfine_landlock = Confirm::new("Do you want to disable Landlock confinement?")
+            .with_default(existing.map(|s| s.unconfine_landlock).unwrap_or(false))
+            .with_help_message(
+                "A Landlock domain denies every mount operation, so this is required to use \
+                 `mount`, `fusermount3`, bind mounts, etc. inside the Litterbox. It also \
+                 exposes Litterbox's internal files in '/'.",
             )
             .prompt()?;
 
@@ -225,6 +236,7 @@ impl LitterboxSettings {
             support_tuntap,
             packet_forwarding,
             unconfine_seccomp,
+            unconfine_landlock,
             expose_pipewire,
             keep_groups,
             expose_kfd,
