@@ -11,10 +11,6 @@ pub struct CommonEntrypointOptions {
     #[arg(long, default_value_t = false)]
     pub root: bool,
 
-    /// Do not apply the Landlock sandbox inside the container.
-    #[arg(long, default_value_t = false)]
-    pub unconfine_landlock: bool,
-
     /// Specify what to do with background processes.
     #[arg(long, value_enum, default_value_t = Default::default())]
     pub wait: WaitBehaviour,

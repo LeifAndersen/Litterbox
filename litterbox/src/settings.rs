@@ -112,7 +112,7 @@ impl LitterboxSettings {
         Ok(settings)
     }
 
-    pub fn load(lbx_name: &str) -> Result<Option<Self>> {
+    fn load(lbx_name: &str) -> Result<Option<Self>> {
         let path = settings_path(lbx_name)?;
         if !path.exists() {
             debug!("Settings file does not exist for {}", lbx_name);

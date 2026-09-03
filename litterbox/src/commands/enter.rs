@@ -3,7 +3,6 @@ use crate::{
     podman::{
         get_container, is_container_running, start_daemon, wait_for_podman, wait_for_podman_async,
     },
-    settings::LitterboxSettings,
     utils::trace_arguments,
 };
 use anyhow::{Context as _, Result, anyhow};
@@ -109,15 +108,6 @@ impl Command {
             debug!("Container {container_id:?} is already running; just attaching...")
         }
 
-        // The sandbox is applied by the entrypoint inside the container, so
-        // the setting has to be passed along to it.
-        let opts = CommonEntrypointOptions {
-            unconfine_landlock: self.opts.unconfine_landlock
-                || LitterboxSettings::load(&self.name)?
-                    .is_some_and(|settings| settings.unconfine_landlock),
-            ..self.opts
-        };
-
         tokio::runtime::Runtime::new()
             .expect("Tokio runtime should start")
             .block_on(container_exec_entrypoint(
@@ -125,7 +115,7 @@ impl Command {
                 self.interactive,
                 self.tty,
                 self.workdir,
-                opts,
+                self.opts,
             ))?;
 
         files::remove_pid_from_session_lockfile(&session_lock, my_pid)?;
@@ -181,10 +171,6 @@ async fn container_exec_entrypoint(
     // The entrypoint is responsible for dropping root if needed
     if opts.root {
         exec_child.arg("--root");
-    }
-
-    if opts.unconfine_landlock {
-        exec_child.arg("--unconfine-landlock");
     }
 
     if let Some(command) = opts.command {
